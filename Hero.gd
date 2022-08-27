@@ -8,18 +8,15 @@ var spriteHeight: int = get_texture().get_height()
 var halfSpriteHeight: int = spriteHeight / 2
 var halfSpriteWidth: int = spriteWidth / 2
 
-var lowerLimit: int = gameHeight - halfSpriteHeight
-var upperLimit: int = halfSpriteHeight
-var leftLimit: int = halfSpriteWidth
-var rightLimit: int = gameWidth - halfSpriteWidth
-
-export var currentSpeed: float = 300.0
-export var acceleration: float = 300.0
+var speedOnXAxis: float = 0.0
+var speedOnYAxis: float = 0.0
 export var maxSpeed: float = 1500.0
+export var acceleration: float = 300.00
 
-# Called when the node enters the scene tree for the first time.
-func _ready():
-	pass # Replace with function body.
+var lowerLimit: int = gameHeight
+var upperLimit: int = 0
+var leftLimit: int = 0
+var rightLimit: int = gameWidth
 
 func _enter_tree():
 	positionMiddle()
@@ -33,37 +30,55 @@ func _physics_process(delta: float) -> void:
 		moveUp(delta)
 	if Input.is_action_pressed("ui_down"):
 		moveDown(delta)
+		
+	moveHero(delta)
+	clampSpeed()
+	wrapAroundCheck()
 
-func accelerate(delta: float) -> void:
-	currentSpeed += delta * acceleration
-
-func decelerate(delta: float) -> void:
-	currentSpeed -= delta * acceleration
+func wrapAroundCheck()->void:
+	if position.y > lowerLimit:
+		position.y = 0
+	if position.y < upperLimit:
+		position.y = gameHeight
+	if position.x > rightLimit:
+		position.x = 0
+	if position.x < leftLimit:
+		position.x = gameWidth
 
 func moveRight(delta: float) -> void:
-	if (position.x < rightLimit):
-		position.x += currentSpeed * delta
-	if (position.x >= rightLimit):
-		position.x = 1
+	accelerationOnX(delta)
 
 func moveLeft(delta: float) -> void:
-	if (position.x > leftLimit):
-		position.x -= currentSpeed * delta
-	if (position.x <= leftLimit):
-		position.x = rightLimit + 1
+	accelerationOnX(-delta)
 
 func moveUp(delta: float) -> void:
-	if (position.y > upperLimit):
-		position.y -= currentSpeed * delta
-	if (position.y <= upperLimit):
-		position.y = lowerLimit + 1
+	accelerationOnY(-delta)
 
 func moveDown(delta: float) -> void:
-	if (position.y < lowerLimit):
-		position.y += currentSpeed * delta
-	if (position.y >= lowerLimit):
-		position.y = 1
+	accelerationOnY(delta)
 
+# added abs() method, abs() keeps positive numbers positive, and turns negative numbers positive
+# Yas Meteora pointed out that their was no abs() method!
+func accelerationOnX(delta: float) -> void:
+	if abs(speedOnXAxis) <= maxSpeed:
+		speedOnXAxis += acceleration * delta
+
+# added abs() method, abs() keeps positive numbers positive, and turns negative numbers positive
+# Yas Meteora pointed out that their was no abs() method!
+func accelerationOnY(delta: float) -> void:
+	if abs(speedOnYAxis) <= maxSpeed:
+		speedOnYAxis += acceleration * delta
+
+
+func moveHero(delta: float)->void:
+	position.x += speedOnXAxis * delta
+	position.y += speedOnYAxis * delta
+	
 func positionMiddle() -> void:
 	self.position.x = gameWidth / 2
 	self.position.y = gameHeight / 2
+
+	
+func clampSpeed()->void:
+	speedOnXAxis = clamp(speedOnXAxis, -maxSpeed, maxSpeed)
+	speedOnYAxis = clamp(speedOnYAxis, -maxSpeed, maxSpeed)
